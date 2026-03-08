@@ -1,0 +1,20 @@
+-r requirements.txt
+
+# Testing
+pytest==8.2.0
+pytest-asyncio==0.23.7
+pytest-cov==5.0.0
+pytest-mock==3.14.0
+respx==0.21.1          # Mock httpx requests
+asynctest==0.13.0
+
+# Code quality
+ruff==0.4.7
+mypy==1.10.0
+pre-commit==3.7.1
+
+# Dev utilities
+ipython==8.24.0
+rich==13.7.1
+faker==25.2.0           # Generate fake test data
+factory-boy==3.3.0

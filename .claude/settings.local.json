@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker ps:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(.venv/bin/playwright install:*)",
+      "Bash(.venv/bin/pytest:*)",
+      "Bash(wait:*)",
+      "Bash(pip show:*)",
+      "Bash(ollama:*)",
+      "Bash(OLLAMA_HOME=/tmp/ollama-home /tmp/ollama-bin/bin/ollama pull:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(source:*)",
+      "Bash(xargs cat:*)"
+    ]
+  }
+}
