@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ Hermes — Intelligent Web Scraper
+# 🕷️ Hermes — Intelligent Web Scraper
 
 **Self-discovering, zero-config news scraper powered by LLMs and Playwright.**
 
