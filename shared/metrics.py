@@ -1,28 +1,20 @@
 """
-Prometheus metrics definitions shared across services.
-Each service only uses the metrics relevant to it.
+Prometheus metrics for the Hermes scraper.
 """
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
 import os
 
-
-# ── Scraper Metrics ────────────────────────────────────────────
+# ── Scraper ───────────────────────────────────────────────────────────────────
 pages_fetched_total = Counter(
     "scraper_pages_fetched_total",
     "Total pages fetched",
-    ["domain", "status"],  # status: success | blocked | error
+    ["domain", "status"],
 )
 
 pages_blocked_total = Counter(
     "scraper_pages_blocked_total",
     "Pages blocked by anti-bot mechanisms",
     ["domain"],
-)
-
-jobs_completed_total = Counter(
-    "scraper_jobs_completed_total",
-    "Scraping jobs completed",
-    ["status"],  # done | failed
 )
 
 fetch_duration_seconds = Histogram(
@@ -32,10 +24,10 @@ fetch_duration_seconds = Histogram(
     buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0],
 )
 
-# ── LLM Metrics ───────────────────────────────────────────────
+# ── LLM / Selector cache ──────────────────────────────────────────────────────
 llm_requests_total = Counter(
     "scraper_llm_requests_total",
-    "Total LLM API requests made",
+    "Total LLM API requests",
     ["endpoint", "model", "status"],
 )
 
@@ -54,49 +46,21 @@ llm_duration_seconds = Histogram(
 
 selector_cache_hits = Counter(
     "scraper_selector_cache_hits_total",
-    "Selector cache hits (no LLM needed)",
+    "Selector cache hits (Redis or PostgreSQL — no LLM call)",
     ["domain"],
 )
 
 selector_cache_misses = Counter(
     "scraper_selector_cache_misses_total",
-    "Selector cache misses (LLM called)",
+    "Selector cache misses (LLM discovery invoked)",
     ["domain"],
 )
 
-# ── Processing Metrics ────────────────────────────────────────
-pages_processed_total = Counter(
-    "processing_pages_processed_total",
-    "Pages processed by content pipeline",
-    ["status"],  # extracted | skipped_dedup | skipped_short
-)
-
-dedup_rejections_total = Counter(
-    "processing_dedup_rejections_total",
-    "Pages rejected as near-duplicates",
-)
-
-# ── Storage Metrics ───────────────────────────────────────────
-es_index_total = Counter(
-    "storage_es_index_total",
-    "Documents indexed in Elasticsearch",
-    ["status"],
-)
-
-# ── Active jobs gauge ─────────────────────────────────────────
-active_jobs = Gauge(
-    "scraper_active_jobs",
-    "Currently running scrape jobs",
-)
-
-kafka_consumer_lag = Gauge(
-    "scraper_kafka_consumer_lag",
-    "Kafka consumer lag",
-    ["topic", "partition"],
-)
+# ── Run-level ─────────────────────────────────────────────────────────────────
+active_jobs = Gauge("scraper_active_jobs", "Currently running scrape jobs")
 
 
 def start_metrics_server(port: int | None = None) -> None:
-    """Start the Prometheus metrics HTTP server."""
+    """Start the Prometheus metrics HTTP server on METRICS_PORT (default 9090)."""
     port = port or int(os.getenv("METRICS_PORT", "9090"))
     start_http_server(port)

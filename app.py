@@ -30,7 +30,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ── Bootstrap: load .env before any module-level config reads ─────────────────
@@ -173,7 +173,7 @@ async def scrape_website(
     # Article store — saves to DB + optional NDJSON file
     ndjson_dir = output_dir / domain
     ndjson_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     ndjson_path = ndjson_dir / f"{ts}.ndjson"
     article_store = ArticleStore(db_ok=db_ok, ndjson_path=ndjson_path)
 
@@ -249,7 +249,7 @@ async def scrape_website(
                         start_t = time.monotonic()
                         if config.capture_screenshot:
                             slug = re.sub(r'[^a-zA-Z0-9\-_]', '_', canonical.split("/")[-1] or "article")[:80]
-                            date_str = datetime.utcnow().strftime("%Y%m%d")
+                            date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
                             ext = "jpg" if config.screenshot_type == "jpeg" else "png"
                             s_path = str(output_dir / domain / "screenshots" / date_str / f"{slug}.{ext}")
                             html = await browser.get_with_screenshot(
@@ -305,7 +305,7 @@ async def scrape_website(
                     "article_type": result.get("article_type"),
                     "word_count": word_count,
                     "reading_time_minutes": result.get("reading_time_minutes", 1),
-                    "scraped_at": datetime.utcnow().isoformat(),
+                    "scraped_at": datetime.now(timezone.utc).isoformat(),
                     "fetch_method": fetch_method,
                     "fetch_latency_ms": fetch_latency_ms,
                     "overall_score": result.get("overall_score", 0.0),
@@ -367,7 +367,7 @@ def export_results(articles: list[dict], domain: str, output_dir: Path) -> dict[
     """Write JSON + CSV output files into output/{domain}/ subdirectory."""
     domain_dir = output_dir / domain
     domain_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     base = domain_dir / ts
     exported = {}
 
@@ -375,7 +375,7 @@ def export_results(articles: list[dict], domain: str, output_dir: Path) -> dict[
     json_path = Path(str(base) + ".json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(
-            {"domain": domain, "scraped_at": datetime.utcnow().isoformat(),
+            {"domain": domain, "scraped_at": datetime.now(timezone.utc).isoformat(),
              "total": len(articles), "articles": articles},
             f, ensure_ascii=False, indent=2,
         )

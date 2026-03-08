@@ -60,3 +60,8 @@ playwright/.local-browsers/
 
 # Distribution / packaging
 MANIFEST
+
+# Claude Code local files
+.claude/
+CLAUDE.md
+TODO.md

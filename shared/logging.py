@@ -52,8 +52,8 @@ def configure_logging(service_name: str) -> None:
     root_logger.addHandler(handler)
     root_logger.setLevel(getattr(logging, log_level, logging.INFO))
 
-    # Silence noisy libraries
-    for lib in ("httpx", "httpcore", "aiokafka", "elasticsearch", "asyncpg"):
+    # Silence noisy third-party libraries
+    for lib in ("httpx", "httpcore", "asyncpg", "playwright"):
         logging.getLogger(lib).setLevel(logging.WARNING)
 
 

@@ -26,6 +26,8 @@ class SiteConfig(BaseModel):
 
 class SiteSelectors(BaseModel):
     """CSS selectors discovered for a site, cached in Redis + PostgreSQL."""
+    model_config = {"protected_namespaces": ()}
+
     domain: str
     article_links_selector: str = ""
     pagination_next_selector: str = ""
@@ -165,7 +167,9 @@ class SelectorResponse(BaseModel):
     article_date_selector: str = ""
     author_selector: str = ""
     confidence: float = 0.8
-    model_used: str = ""
+    llm_model: str = ""
+
+    model_config = {"protected_namespaces": ()}
 
 
 # ── Scraper Events (observability) ────────────────────────────────────────────

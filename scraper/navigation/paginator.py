@@ -64,6 +64,12 @@ _SECTION_SKIP = [
     "/advertise", "/subscribe", "/newsletter",
     "/page/",       # pagination path segment
     "/cdn-cgi/",    # Cloudflare internal
+    "/live/",       # streaming / live TV/radio pages
+    "/emisiuni",    # TV show episodes (not news articles)
+    "/video/",      # video galleries
+    "/podcast",     # podcast pages
+    "/galerie",     # photo galleries
+    "/foto/",       # photo galleries
 ]
 
 
@@ -120,7 +126,17 @@ class Paginator:
         urls: list[str] = []
         selector = self.selectors.article_links_selector
 
-        elements = soup.select(selector) if selector else self._heuristic_article_links(soup)
+        if selector:
+            elements = soup.select(selector)
+            if not elements:
+                logger.debug(
+                    "article_links_selector_empty_fallback",
+                    selector=selector,
+                    url=base_url,
+                )
+                elements = self._heuristic_article_links(soup)
+        else:
+            elements = self._heuristic_article_links(soup)
 
         for el in elements[:60]:
             if el.name == "a":
@@ -195,8 +211,26 @@ class Paginator:
         parsed = urlparse(url)
         if domain not in parsed.netloc:
             return False
-        skip = ["/tag/", "/category/", "/autor/", "/author/", "/page/", "/search", "/feed", ".xml"]
-        return not any(p in parsed.path for p in skip)
+
+        path = parsed.path.rstrip("/")
+
+        # Skip utility / taxonomy pages
+        skip = [
+            "/tag/", "/tags/", "/category/", "/categorie/", "/categoria/",
+            "/autor/", "/author/", "/autori/",
+            "/page/", "/pagina/",
+            "/search", "/cautare",
+            "/feed", ".xml", ".rss",
+            "/login", "/register", "/abonare",
+            "/contact", "/despre", "/about",
+        ]
+        if any(s in path for s in skip):
+            return False
+
+        # Require at least 2 path segments so section/category roots are excluded.
+        # Real article URLs look like /section/article-slug or /YYYY/MM/DD/slug.
+        parts = [p for p in path.split("/") if p]
+        return len(parts) >= 2
 
 
 # ── SiteNavigator ──────────────────────────────────────────────────────────────
