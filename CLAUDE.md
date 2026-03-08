@@ -9,7 +9,18 @@ Always activate the virtual environment before running any Python commands:
 source .venv/bin/activate
 ```
 
-Infrastructure required: PostgreSQL (`docker-postgres-1`), Redis (`docker-redis-1`), Ollama (`localhost:11434`).
+Infrastructure (Docker Compose — preferred):
+```bash
+docker compose up -d --build          # start postgres, redis, ollama, scraper
+docker compose exec scraper python app.py --website biziday.ro --pages 1 --articles 5
+./docs/run.sh                         # scrape all configured sites via Docker
+```
+
+Infrastructure (local dev — requires host postgres/redis/ollama):
+- PostgreSQL: `docker start docker-postgres-1` (or any PG on port 5432)
+- Redis: `docker start docker-redis-1` (or any Redis on port 6379)
+- Ollama: running at `localhost:11434` with `qwen2.5-coder:7b` pulled
+- Ollama Docker port is mapped to `11435` (host 11434 conflict avoidance)
 
 ## Common Commands
 
@@ -114,7 +125,25 @@ python -m pytest tests/unit/ -q
 
 Integration tests in `tests/integration/` require PostgreSQL, Redis, Ollama, and live network access.
 
-## Known Issues
+## Known Issues & Patterns
 
-- `qwen2.5-coder:7b` occasionally generates Tailwind/generic selectors that match nothing on some sites — the `_compact_dom()` DOM preprocessing and system prompt guards mitigate this but don't eliminate it.
+- `qwen2.5-coder:7b` frequently generates `.post-title a` for any site that doesn't have a standard WordPress structure (e.g. mediafax.ro, gandul.ro). The `_extract_article_links` function now falls back to heuristic link extraction (`_heuristic_article_links`) when the LLM selector yields 0 matches.
 - When all URLs for a domain are already in `scraped_urls`, the scraper exits early with "all_urls_already_scraped" (expected behavior, not a bug).
+- Sites with streaming/media sections (e.g. digi24.ro `/live/digi24-fm`) are filtered via `_SECTION_SKIP` in `paginator.py`. Romanian utility page paths (`/politica-de-cookies`, `/termeni-si-conditii`) are NOT yet in the skip list.
+- antena3.ro and gov.ro collect some section/category pages as article URLs (3-segment paths that pass `_is_article_url` but are not news articles). Workaround: the title-length gate (`MIN_TITLE_LENGTH=20`) usually rejects them.
+
+## Validated Sites (2026-03-08)
+
+| Site | Status |
+|------|--------|
+| biziday.ro | ✓ |
+| hotnews.ro | ✓ |
+| adevarul.ro | ✓ |
+| stirileprotv.ro | ✓ |
+| digi24.ro | ✓ |
+| euronews.ro | ✓ |
+| mediafax.ro | ✓ (heuristic fallback) |
+| gandul.ro | ✓ (heuristic fallback) |
+| romania.europalibera.org | ✓ |
+| antena3.ro | ⚠ partial |
+| gov.ro | ⚠ partial |

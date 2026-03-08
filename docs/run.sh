@@ -34,9 +34,11 @@ WEBSITES=(
   "stirileprotv.ro"
   "hotnews.ro"
   "antena3.ro"
-  # "digi24.ro"
-  # "mediafax.ro"
-  # "romania.europalibera.org"
+  "digi24.ro"
+  "mediafax.ro"
+  "gandul.ro"
+  "romania.europalibera.org"
+  "gov.ro"
 )
 
 # ── Scraping parameters ────────────────────────────────────────────────────────

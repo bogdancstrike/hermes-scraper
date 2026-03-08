@@ -50,7 +50,7 @@ services:
         ollama serve &
         SERVER_PID=$$!
         echo "[ollama-init] Waiting for server..."
-        until curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; do sleep 1; done
+        until ollama list > /dev/null 2>&1; do sleep 2; done
         echo "[ollama-init] Pulling model ${LLM_MODEL:-qwen2.5-coder:7b}..."
         ollama pull ${LLM_MODEL:-qwen2.5-coder:7b}
         echo "[ollama-init] Model ready."
@@ -59,14 +59,16 @@ services:
       - LLM_MODEL=${LLM_MODEL:-qwen2.5-coder:7b}
     volumes:
       - ollama_data:/root/.ollama
+    # Port only exposed to host for debugging. If host already runs Ollama on 11434,
+    # change to "11435:11434" or remove to avoid conflicts.
     ports:
-      - "11434:11434"
+      - "11435:11434"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      test: ["CMD-SHELL", "ollama list > /dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 30
-      start_period: 60s
+      start_period: 30s
     # Uncomment to enable GPU acceleration:
     # deploy:
     #   resources:
