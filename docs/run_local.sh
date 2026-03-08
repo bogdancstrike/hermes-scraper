@@ -6,8 +6,8 @@ set -euo pipefail
 # Resolve project paths
 # ==========================================================
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( realpath "$SCRIPT_DIR/../.." )"
+PROJECT_ROOT="/home/bogdan/workspace/dev/gen_scraper/llm-scraper"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 APP="python3 $PROJECT_ROOT/app.py"
 VENV="$PROJECT_ROOT/.venv"
