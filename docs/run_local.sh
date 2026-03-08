@@ -3,24 +3,26 @@
 set -euo pipefail
 
 # ==========================================================
-# Configuration
+# Resolve project paths
 # ==========================================================
 
-VENV="/home/bogdan/workspace/dev/gen_scraper/llm-scraper/.venv"
-APP="python3 app.py"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( realpath "$SCRIPT_DIR/../.." )"
+
+APP="python3 $PROJECT_ROOT/app.py"
+VENV="$PROJECT_ROOT/.venv"
 
 # number of parallel jobs
 JOBS=8
 
-# logs directory
-LOG_DIR="logs"
-RESULTS_FILE="results.txt"
+LOG_DIR="$SCRIPT_DIR/logs"
+RESULTS_FILE="$SCRIPT_DIR/results.txt"
 
 mkdir -p "$LOG_DIR"
 rm -f "$RESULTS_FILE"
 
 # ==========================================================
-# Activate Python env
+# Activate Python environment
 # ==========================================================
 
 source "$VENV/bin/activate"
@@ -246,7 +248,7 @@ EOF
 )
 
 # ==========================================================
-# Worker function
+# Worker
 # ==========================================================
 
 run_scraper() {
@@ -272,7 +274,7 @@ export APP LOG_DIR RESULTS_FILE
 echo "$WEBSITES" | parallel -j "$JOBS" run_scraper {}
 
 # ==========================================================
-# Final report
+# Report
 # ==========================================================
 
 TOTAL=$(wc -l < "$RESULTS_FILE")

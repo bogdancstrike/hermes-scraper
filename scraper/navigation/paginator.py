@@ -227,9 +227,18 @@ class Paginator:
         if any(s in path for s in skip):
             return False
 
-        # Must have at least one non-empty path segment (not the bare root "/").
         parts = [p for p in path.split("/") if p]
-        return len(parts) >= 1
+        if not parts:
+            return False
+
+        if len(parts) == 1:
+            # Single-segment paths are usually section roots (/sport, /stiri, /economie).
+            # Exception: URLs with a digit are likely article IDs (e.g. biziday.ro's /456748932-slug).
+            import re as _re
+            return bool(_re.search(r"\d", parts[0]))
+
+        # 2+ path segments are accepted as potential articles.
+        return True
 
 
 # ── SiteNavigator ──────────────────────────────────────────────────────────────

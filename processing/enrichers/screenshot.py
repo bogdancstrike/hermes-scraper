@@ -10,7 +10,7 @@ Returns the path to the saved screenshot or None on failure.
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from shared.logging import get_logger
@@ -49,7 +49,7 @@ async def capture_screenshot(
         Absolute path string to the saved screenshot, or None on failure.
     """
     ext = "jpg" if screenshot_type == "jpeg" else "png"
-    date_str = datetime.utcnow().strftime("%Y%m%d")
+    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     slug = _url_to_slug(url)
     dest_dir = output_dir / domain / "screenshots" / date_str
     dest_dir.mkdir(parents=True, exist_ok=True)

@@ -4,8 +4,11 @@ Shared Pydantic data models used across all services.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,7 +24,7 @@ class SiteConfig(BaseModel):
     is_active: bool = True
     schedule: str = "0 */6 * * *"
     max_pages: int = 100
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 class SiteSelectors(BaseModel):
@@ -37,7 +40,7 @@ class SiteSelectors(BaseModel):
     author_selector: str = ""
     confidence: float = 0.0
     llm_model: str = ""
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
     def is_valid(self) -> bool:
         """Check if we have at minimum the essential selectors."""
@@ -54,7 +57,7 @@ class ScrapeJob(BaseModel):
     start_url: str
     priority: int = 5
     max_pages: int = 100
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
 
 
 class RawHtmlPage(BaseModel):
@@ -67,7 +70,7 @@ class RawHtmlPage(BaseModel):
     html_size_bytes: int = 0
     fetch_duration_ms: int = 0
     http_status: int = 200
-    scraped_at: datetime = Field(default_factory=datetime.utcnow)
+    scraped_at: datetime = Field(default_factory=_utcnow)
 
     @field_validator("html_size_bytes", mode="before")
     @classmethod
@@ -93,7 +96,7 @@ class ScrapedArticle(BaseModel):
     published_date: str | None = None
     language: str | None = None
     content: str = ""
-    scraped_at: datetime = Field(default_factory=datetime.utcnow)
+    scraped_at: datetime = Field(default_factory=_utcnow)
 
 
 class ArticleRecord(BaseModel):
@@ -182,4 +185,4 @@ class ScraperEvent(BaseModel):
     domain: str
     url: str = ""
     detail: dict = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=_utcnow)
