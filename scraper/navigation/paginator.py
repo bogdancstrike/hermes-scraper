@@ -223,6 +223,10 @@ class Paginator:
             "/feed", ".xml", ".rss",
             "/login", "/register", "/abonare",
             "/contact", "/despre", "/about",
+            # Media / non-article content
+            "/live/", "/video/", "/foto/", "/galerie/",
+            "/podcast/", "/emisiuni/", "/emisiunea/",
+            "/cdn-cgi/",
         ]
         if any(s in path for s in skip):
             return False

@@ -17,7 +17,9 @@
       "Bash(pip install:*)",
       "Bash(source:*)",
       "Bash(xargs cat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(chmod +x:*)",
+      "Bash(./docs/run_local.sh:*)"
     ]
   }
 }
