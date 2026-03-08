@@ -227,10 +227,9 @@ class Paginator:
         if any(s in path for s in skip):
             return False
 
-        # Require at least 2 path segments so section/category roots are excluded.
-        # Real article URLs look like /section/article-slug or /YYYY/MM/DD/slug.
+        # Must have at least one non-empty path segment (not the bare root "/").
         parts = [p for p in path.split("/") if p]
-        return len(parts) >= 2
+        return len(parts) >= 1
 
 
 # ── SiteNavigator ──────────────────────────────────────────────────────────────
