@@ -1,0 +1,155 @@
+name: hermes
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: hermes-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: scraper
+      POSTGRES_PASSWORD: scraper
+      POSTGRES_DB: scraperdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scraper -d scraperdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: hermes-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Ollama (local LLM for selector discovery) ──────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: hermes-ollama
+    restart: unless-stopped
+    # Pull the selector-discovery model on first start.
+    # If you have an NVIDIA GPU, uncomment the deploy section below.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        SERVER_PID=$$!
+        echo "[ollama-init] Waiting for server..."
+        until curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; do sleep 1; done
+        echo "[ollama-init] Pulling model ${LLM_MODEL:-qwen2.5-coder:7b}..."
+        ollama pull ${LLM_MODEL:-qwen2.5-coder:7b}
+        echo "[ollama-init] Model ready."
+        wait $$SERVER_PID
+    environment:
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5-coder:7b}
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    # Uncomment to enable GPU acceleration:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ── Hermes Scraper ─────────────────────────────────────────────────────────
+  # The scraper runs on-demand via `docs/run.sh` or directly with
+  # `docker compose exec scraper python app.py --website <domain>`.
+  # When started with `up -d` it stays alive and waits for commands.
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hermes-scraper
+    restart: unless-stopped
+    command: ["tail", "-f", "/dev/null"]   # stays alive; scrapers are exec'd into it
+    environment:
+      # ── Infrastructure (uses Docker service names) ─────────────────────────
+      POSTGRES_DSN: postgresql://scraper:scraper@postgres:5432/scraperdb
+      REDIS_URL: redis://redis:6379/0
+      LLM_BASE_URL: http://ollama:11434/v1
+
+      # ── LLM model (override via .env or docker-compose override) ───────────
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5-coder:7b}
+
+      # ── Scraper behaviour ──────────────────────────────────────────────────
+      SCRAPE_LIMIT: ${SCRAPE_LIMIT:-100}
+      SCRAPER_MAX_PAGES: ${SCRAPER_MAX_PAGES:-5}
+      SCRAPER_CONCURRENCY: ${SCRAPER_CONCURRENCY:-3}
+      SCRAPER_DELAY_MIN: ${SCRAPER_DELAY_MIN:-1.5}
+      SCRAPER_DELAY_MAX: ${SCRAPER_DELAY_MAX:-3.5}
+      SCRAPER_MAX_SECTIONS: ${SCRAPER_MAX_SECTIONS:-50}
+      SCRAPER_SCROLL_MAX: ${SCRAPER_SCROLL_MAX:-20}
+      SCRAPER_SCROLL_WAIT_MS: ${SCRAPER_SCROLL_WAIT_MS:-1500}
+
+      # ── Browser ───────────────────────────────────────────────────────────
+      HEADLESS: "True"
+      BROWSER_TIMEOUT: ${BROWSER_TIMEOUT:-45000}
+      USE_STEALTH: "True"
+      NAVIGATION_STRATEGY: ${NAVIGATION_STRATEGY:-domcontentloaded}
+      IMPERSONATE_BROWSER: ${IMPERSONATE_BROWSER:-chrome120}
+
+      # ── Selector discovery ─────────────────────────────────────────────────
+      RETRY_DEEP_ANALYSIS_WEBSITE_SELECTORS: ${RETRY_DEEP_ANALYSIS_WEBSITE_SELECTORS:-3}
+      LLM_SELECTOR_CACHE_TTL: ${LLM_SELECTOR_CACHE_TTL:-30}
+
+      # ── Content quality ────────────────────────────────────────────────────
+      MIN_TITLE_LENGTH: ${MIN_TITLE_LENGTH:-20}
+
+      # ── Enrichments (off by default) ──────────────────────────────────────
+      CAPTURE_SCREENSHOT: ${CAPTURE_SCREENSHOT:-False}
+      SCREENSHOT_TYPE: ${SCREENSHOT_TYPE:-jpeg}
+      EXTRACT_EMAILS: ${EXTRACT_EMAILS:-False}
+      EXTRACT_HASHTAGS: ${EXTRACT_HASHTAGS:-False}
+
+      # ── Logging ────────────────────────────────────────────────────────────
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-console}
+
+      # ── Anthropic / OpenAI keys (pass through from host .env if set) ───────
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+      # Playwright requires a writable home dir in Docker
+      HOME: /root
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./output:/app/output      # persisted scrape results (JSON, CSV, NDJSON)
+      - scraper_cache:/root/.cache  # Playwright browser binary cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  scraper_cache:
