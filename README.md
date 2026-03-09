@@ -48,13 +48,13 @@ Homepage → discover sections → collect article URLs → fetch & extract → 
 | **Domain memory** | Learns best fetch strategy per domain across runs |
 | **Anti-bot evasion** | Stealth Playwright, randomised UA, GDPR overlay dismissal |
 | **Quality scoring** | Detects paywalled and liveblog content |
-| **Validated on 11 sites** | Romanian news sites across different tech stacks |
+| **Batch mode** | GNU Parallel execution across 90+ sites with `docs/run_local.sh` |
 
 ## Quickstart (Docker)
 
 ```bash
 # Clone and start
-git clone <repo-url> && cd hermes
+git clone git@github.com:bogdancstrike/hermes-scraper.git && cd hermes-scraper
 docker compose up -d --build
 
 # Scrape a site
@@ -132,21 +132,127 @@ app.py (CLI)
 └── ArticleStore           — idempotent PostgreSQL persistence + NDJSON fallback
 ```
 
-## Validated Sites
+## Batch Validation Report (2026-03-09)
 
-| Site | Status | Notes |
-|------|--------|-------|
-| biziday.ro | ✓ | Static fetch, ~200ms |
-| hotnews.ro | ✓ | |
-| adevarul.ro | ✓ | |
-| stirileprotv.ro | ✓ | |
-| digi24.ro | ✓ | |
-| euronews.ro | ✓ | |
-| mediafax.ro | ✓ | Heuristic fallback |
-| gandul.ro | ✓ | Heuristic fallback |
-| romania.europalibera.org | ✓ | |
-| antena3.ro | ⚠ | Partial |
-| gov.ro | ⚠ | Partial |
+Tested **99 sites** with `docs/run_local.sh` — 8 parallel jobs, `--pages 1 --articles 10`, 300s timeout per site.
+
+**Summary: 57 ✓ SUCCESS · 30 ⏱ TIMEOUT · 12 ✗ FAILED**
+
+### Romanian News — National
+
+| Site | Status | Articles |
+|------|--------|----------|
+| adevarul.ro | ✓ SUCCESS | 10 |
+| mediafax.ro | ✓ SUCCESS | 10 |
+| gandul.ro | ✓ SUCCESS | 8 |
+| evz.ro | ✓ SUCCESS | 10 |
+| agerpres.ro | ✓ SUCCESS | 10 |
+| observatornews.ro | ✓ SUCCESS | 10 |
+| romaniatv.net | ✓ SUCCESS | 10 |
+| realitatea.net | ✓ SUCCESS | 10 |
+| b1tv.ro | ✓ SUCCESS | 10 |
+| economica.net | ✓ SUCCESS | 10 |
+| cursdeguvernare.ro | ✓ SUCCESS | 10 |
+| news.ro | ✓ SUCCESS | 10 |
+| g4media.ro | ✓ SUCCESS | 10 |
+| capital.ro | ✓ SUCCESS | 10 |
+| ziare.com | ✓ SUCCESS | 10 |
+| euronews.ro | ✓ SUCCESS | 7 |
+| gov.ro | ✓ SUCCESS | 4 |
+| pressone.ro | ✓ SUCCESS | 10 |
+| bizlawyer.ro | ✓ SUCCESS | 10 |
+| wall-street.ro | ✓ SUCCESS | 3 |
+| inpolitics.ro | ✓ SUCCESS | 4 |
+| agrointel.ro | ✓ SUCCESS | 10 |
+| stiripesurse.ro | ✓ SUCCESS | 10 |
+| stirilekanald.ro | ✓ SUCCESS | 10 |
+| kanald.ro | ✓ SUCCESS | 10 |
+| curentul.info | ✓ SUCCESS | 10 |
+| hotnews.ro | ⏱ TIMEOUT | — |
+| stirileprotv.ro | ⏱ TIMEOUT | — |
+| antena3.ro | ⏱ TIMEOUT | — |
+| libertatea.ro | ⏱ TIMEOUT | — |
+| jurnalul.ro | ⏱ TIMEOUT | — |
+| profit.ro | ⏱ TIMEOUT | — |
+| spotmedia.ro | ⏱ TIMEOUT | — |
+| romania-insider.com | ⏱ TIMEOUT | — |
+| forbes.ro | ⏱ TIMEOUT | — |
+| dcnews.ro | ⏱ TIMEOUT | — |
+| activenews.ro | ⏱ TIMEOUT | — |
+| adevarulfinanciar.ro | ⏱ TIMEOUT | — |
+| puterea.ro | ⏱ TIMEOUT | — |
+| biziday.ro | ✗ FAILED | — (all URLs deduped from prior run) |
+| romania.europalibera.org | ✗ FAILED | 0 (dedup / short titles) |
+| digi24.ro | ✗ FAILED | 0 (live/ radio URLs as articles — fixed in code) |
+| romaniajournal.ro | ✗ FAILED | 0 (LLM selector returns 0 matches) |
+| stiri.tvr.ro | ✗ FAILED | 0 (Playwright browser timeout) |
+| romanialibera.ro | ✗ FAILED | 0 |
+
+### Romanian News — Regional
+
+| Site | Status | Articles |
+|------|--------|----------|
+| ziarulunirea.ro | ✓ SUCCESS | 10 |
+| ziaruldeiasi.ro | ✓ SUCCESS | 8 |
+| banatulazi.ro | ✓ SUCCESS | 10 |
+| brasov.net | ✓ SUCCESS | 10 |
+| cluj24.ro | ✓ SUCCESS | 10 |
+| timisplus.ro | ✓ SUCCESS | 10 |
+| gds.ro | ✓ SUCCESS | 8 |
+| ziarulargesul.ro | ✓ SUCCESS | 8 |
+| observatorulph.ro | ✓ SUCCESS | 8 |
+| mesagerulneamt.ro | ✓ SUCCESS | 10 |
+| ziarulamprenta.ro | ✓ SUCCESS | 10 |
+| botosaneanul.ro | ✓ SUCCESS | 10 |
+| sibiu100.ro | ✓ SUCCESS | 9 |
+| gorjeanul.ro | ✓ SUCCESS | 9 |
+| oradesibiu.ro | ✓ SUCCESS | 10 |
+| replicaonline.ro | ✓ SUCCESS | 10 |
+| stiriagricole.ro | ✓ SUCCESS | 2 |
+| gazetabt.ro | ✓ SUCCESS | 10 |
+| gazetadambovitei.ro | ✓ SUCCESS | 10 |
+| transilvaniareporter.ro | ✓ SUCCESS | 10 |
+| stiridinbanat.ro | ✓ SUCCESS | 10 |
+| aradon.ro | ✓ SUCCESS | 10 |
+| actualdecluj.ro | ✓ SUCCESS | 10 |
+| debanat.ro | ✓ SUCCESS | 10 |
+| bihon.ro | ✓ SUCCESS | 10 |
+| ziaruldevrancea.ro | ✓ SUCCESS | 3 |
+| monitorulcj.ro | ⏱ TIMEOUT | — |
+| monitorulsv.ro | ⏱ TIMEOUT | — |
+| ziarullumina.ro | ⏱ TIMEOUT | — |
+| telegrafonline.ro | ⏱ TIMEOUT | — |
+| clujcapitala.ro | ⏱ TIMEOUT | — |
+| mesagerul.ro | ✗ FAILED | 0 |
+| sibiulindependent.ro | ✗ FAILED | 0 |
+| adevaruldeseara.ro | ✗ FAILED | 0 |
+| qmagazine.ro | ✗ FAILED | 0 |
+
+### International
+
+| Site | Status | Articles |
+|------|--------|----------|
+| bbc.co.uk | ✓ SUCCESS | 6 |
+| axios.com | ✓ SUCCESS | 9 |
+| wired.com | ✓ SUCCESS | 10 |
+| techcrunch.com | ✓ SUCCESS | 10 |
+| bloomberg.com | ✓ SUCCESS | 1 |
+| theguardian.com | ⏱ TIMEOUT | — |
+| ft.com | ⏱ TIMEOUT | — |
+| economist.com | ⏱ TIMEOUT | — |
+| apnews.com | ⏱ TIMEOUT | — |
+| cnn.com | ⏱ TIMEOUT | — |
+| nytimes.com | ⏱ TIMEOUT | — |
+| politico.eu | ⏱ TIMEOUT | — |
+| politico.com | ⏱ TIMEOUT | — |
+| theatlantic.com | ⏱ TIMEOUT | — |
+| theverge.com | ⏱ TIMEOUT | — |
+| businessinsider.com | ⏱ TIMEOUT | — |
+| forbes.com | ⏱ TIMEOUT | — |
+| reuters.com | ✗ FAILED | 0 (JS-rendered / anti-bot) |
+| washingtonpost.com | ✗ FAILED | 0 (paywall) |
+
+> **Timeout note**: Most timeouts are Playwright-heavy sites needing JS rendering. Increase `HERMES_TIMEOUT` or use `--jobs 4` for resource-constrained environments. Many sites that timeout would succeed with a 600s budget.
 
 ## Tech Stack
 
