@@ -127,23 +127,19 @@ Integration tests in `tests/integration/` require PostgreSQL, Redis, Ollama, and
 
 ## Known Issues & Patterns
 
-- `qwen2.5-coder:7b` frequently generates `.post-title a` for any site that doesn't have a standard WordPress structure (e.g. mediafax.ro, gandul.ro). The `_extract_article_links` function now falls back to heuristic link extraction (`_heuristic_article_links`) when the LLM selector yields 0 matches.
-- When all URLs for a domain are already in `scraped_urls`, the scraper exits early with "all_urls_already_scraped" (expected behavior, not a bug).
-- Sites with streaming/media sections (e.g. digi24.ro `/live/digi24-fm`) are filtered via `_SECTION_SKIP` in `paginator.py`. Romanian utility page paths (`/politica-de-cookies`, `/termeni-si-conditii`) are NOT yet in the skip list.
-- antena3.ro and gov.ro collect some section/category pages as article URLs (3-segment paths that pass `_is_article_url` but are not news articles). Workaround: the title-length gate (`MIN_TITLE_LENGTH=20`) usually rejects them.
+- `qwen2.5-coder:7b` frequently generates `.post-title a` for non-WordPress sites (e.g. mediafax.ro, gandul.ro). `_extract_article_links` falls back to `_heuristic_article_links` when the LLM selector yields 0 matches.
+- When all URLs for a domain are already in `scraped_urls`, the scraper exits early with "all_urls_already_scraped". The app currently exits with code 1 in this case, causing batch scripts to report FAILED (known issue — not a real failure).
+- `_SECTION_SKIP` (section discovery filter) and `_is_article_url` skip list must both be updated when adding new media/utility path patterns. Both live in `scraper/navigation/paginator.py`.
+- Romanian utility page patterns NOT yet in skip lists: `/politica-de-cookies`, `/termeni-si-conditii`, `/politica-de-confidentialitate`.
+- Many Playwright-heavy sites (hotnews.ro, antena3.ro, libertatea.ro, etc.) timeout at 300s in batch mode. They work fine individually with longer timeouts.
+- digi24.ro: `/live/digi24-fm` etc. were collected as articles (2-segment paths). Fixed: added `/live/`, `/video/`, `/foto/`, `/galerie/`, `/podcast/`, `/emisiuni/` to `_is_article_url` skip list.
 
-## Validated Sites (2026-03-08)
+## Batch Validation (2026-03-09, 99 sites)
 
-| Site | Status |
-|------|--------|
-| biziday.ro | ✓ |
-| hotnews.ro | ✓ |
-| adevarul.ro | ✓ |
-| stirileprotv.ro | ✓ |
-| digi24.ro | ✓ |
-| euronews.ro | ✓ |
-| mediafax.ro | ✓ (heuristic fallback) |
-| gandul.ro | ✓ (heuristic fallback) |
-| romania.europalibera.org | ✓ |
-| antena3.ro | ⚠ partial |
-| gov.ro | ⚠ partial |
+Run: `docs/run_local.sh` — 8 parallel jobs, `--pages 1 --articles 10`, 300s timeout.
+
+- **57 SUCCESS**: Most Romanian regional/national sites, BBC, axios.com, wired.com, techcrunch.com, bloomberg.com
+- **30 TIMEOUT**: hotnews.ro, antena3.ro, libertatea.ro + large international sites (NYT, CNN, Guardian, FT, etc.)
+- **12 FAILED**: biziday.ro (dedup), digi24.ro (fixed), romaniajournal.ro (bad selector), reuters.com/WaPo (anti-bot/paywall)
+
+Full per-site table in `README.md`.
